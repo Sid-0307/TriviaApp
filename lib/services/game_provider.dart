@@ -191,49 +191,6 @@ class GameProvider with ChangeNotifier {
     return questions[currentQuestionIndex];
   }
 
-  // Future<void> submitAnswer(String answer) async {
-  //   if (currentRoom == null || currentPlayer == null || questions.isEmpty) return;
-  //
-  //   final questionRef = _database.ref('rooms/${currentRoom!.roomCode}');
-  //   final answerOrderRef = questionRef.child('answerOrder');
-  //
-  //   final transaction = await answerOrderRef.runTransaction((Object? curr) {
-  //     List<String> answers = curr != null ? List<String>.from(curr as List) : [];
-  //     if (!answers.contains(currentPlayer!.id)) {
-  //       answers.add(currentPlayer!.id);
-  //     }
-  //     return Transaction.success(answers);
-  //   });
-  //
-  //   if (transaction.committed) {
-  //     final answers = List<String>.from(transaction.snapshot.value as List);
-  //     final position = answers.indexOf(currentPlayer!.id);
-  //
-  //     int points = 0;
-  //     if (position == 0) points = 5;
-  //     else if (position == 1) points = 3;
-  //     else if (position == 2) points = 1;
-  //
-  //     if (points > 0) {
-  //       final playerIndex = currentRoom!.players.indexWhere(
-  //               (p) => p.id == currentPlayer!.id
-  //       );
-  //
-  //       if (playerIndex != -1) {
-  //         final updatedPlayers = List<Player>.from(currentRoom!.players);
-  //         updatedPlayers[playerIndex] = Player(
-  //           id: currentPlayer!.id,
-  //           name: currentPlayer!.name,
-  //           score: (currentPlayer!.score ?? 0) + points,
-  //         );
-  //
-  //         await _database.ref('rooms/${currentRoom!.roomCode}/players')
-  //             .set(updatedPlayers.map((p) => p.toJson()).toList());
-  //       }
-  //     }
-  //   }
-  // }
-
   Future<void> submitAnswer(String answer) async {
     if (currentRoom == null || currentPlayer == null || questions.isEmpty) return;
 
@@ -252,8 +209,6 @@ class GameProvider with ChangeNotifier {
     });
 
     if (transaction.committed) {
-      // final answers = List<String>.from(transaction.snapshot.value as List);
-      // final position = answers.indexOf(currentPlayer!.id);
       final answers = transaction.snapshot.value != null
           ? List<String>.from(transaction.snapshot.value as List)
           : <String>[];

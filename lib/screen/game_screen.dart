@@ -16,6 +16,7 @@ class _GameScreenState extends State<GameScreen> {
   Timer? _timer;
   int _timeLeft = 30;
   int _lastQuestionIndex = -1;
+  bool _answerSubmitted = false;
 
 
   @override
@@ -25,6 +26,7 @@ class _GameScreenState extends State<GameScreen> {
 
   void startTimer() {
     _timeLeft = 30;
+    _answerSubmitted = false;
     _timer = Timer.periodic(Duration(seconds: 1), (timer) {
       setState(() {
         if (_timeLeft > 0) {
@@ -90,7 +92,10 @@ class _GameScreenState extends State<GameScreen> {
                       (answer) => Padding(
                     padding: EdgeInsets.symmetric(vertical: 8.0),
                     child: ElevatedButton(
-                      onPressed: () async {
+                      onPressed: _answerSubmitted ? null : () async {
+                        setState(() {
+                          _answerSubmitted = true;
+                        });
                         await gameProvider.submitAnswer(answer);
                         // Show dialog for answer correctness
                         showDialog(
