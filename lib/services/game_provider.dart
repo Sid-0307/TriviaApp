@@ -168,6 +168,16 @@ class GameProvider with ChangeNotifier {
     });
   }
 
+  Future<void> backToRoom() async{
+    if (currentRoom == null) return;
+    await _database.ref('rooms/${currentRoom!.roomCode}').update({
+      'status': GameStatus.waiting.toString(),
+      'players':[currentPlayer],
+      'questions': [],
+      'currentQuestionIndex': 0,
+    });
+  }
+
   Future<void> startGame() async {
     if (currentRoom == null) return;
 

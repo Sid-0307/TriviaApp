@@ -6,31 +6,75 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              'Trivia Game',
-              style: Theme.of(context).textTheme.headlineLarge,
-            ),
-            SizedBox(height: 50),
-            ElevatedButton(
-              onPressed: () => Navigator.pushNamed(context, '/create-room'),
-              child: Text('Create Room'),
-              style: ElevatedButton.styleFrom(
-                padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+      backgroundColor: Colors.black,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Colors.blueGrey.shade900,
+              Colors.black
+            ],
+          ),
+        ),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              ShaderMask(
+                shaderCallback: (bounds) => LinearGradient(
+                  colors: [Colors.amber, Colors.orange.shade700],
+                ).createShader(bounds),
+                child: Text(
+                  'TRIVIA GAME',
+                  style: TextStyle(
+                    fontSize: 42,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                    letterSpacing: 2,
+                  ),
+                ),
               ),
-            ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () => Navigator.pushNamed(context, '/join-room'),
-              child: Text('Join Room'),
-              style: ElevatedButton.styleFrom(
-                padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+              SizedBox(height: 60),
+              _buildButton(
+                  context,
+                  'Create Room',
+                      () => Navigator.pushNamed(context, '/create-room')
               ),
-            ),
-          ],
+              SizedBox(height: 20),
+              _buildButton(
+                  context,
+                  'Join Room',
+                      () => Navigator.pushNamed(context, '/join-room')
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildButton(BuildContext context, String text, VoidCallback onPressed) {
+    return ConstrainedBox(
+      constraints: BoxConstraints.tightFor(width: 250),
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.amber.shade600,
+          foregroundColor: Colors.black,
+          padding: EdgeInsets.symmetric(vertical: 15),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        child: Text(
+          text,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1.2,
+          ),
         ),
       ),
     );

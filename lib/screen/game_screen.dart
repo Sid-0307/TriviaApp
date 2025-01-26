@@ -18,7 +18,6 @@ class _GameScreenState extends State<GameScreen> {
   int _lastQuestionIndex = -1;
   bool _answerSubmitted = false;
 
-
   @override
   void initState() {
     super.initState();
@@ -49,19 +48,62 @@ class _GameScreenState extends State<GameScreen> {
   Widget build(BuildContext context) {
     return Consumer<GameProvider>(
       builder: (context, gameProvider, _) {
+        final room = gameProvider.currentRoom;
+        if (room?.status == GameStatus.finished) {
+          return Scaffold(
+            backgroundColor: Colors.black,
+            appBar: AppBar(
+              backgroundColor: Colors.black,
+              title: Text(
+                'Game Over',
+                style: TextStyle(color: Colors.amber),
+              ),
+              automaticallyImplyLeading: false,
+            ),
+            body: Column(
+              children: [
+                Expanded(
+                  child: buildLeaderboard(room),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: ElevatedButton(
+                    onPressed: () async{
+                      // await gameProvider.backToRoom();
+                      Navigator.pushReplacementNamed(context, '/waiting-room');
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.amber,
+                      foregroundColor: Colors.black,
+                      minimumSize: Size(double.infinity, 50),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: Text('Back to Room'),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
         if (_lastQuestionIndex != gameProvider.currentQuestionIndex) {
           _lastQuestionIndex = gameProvider.currentQuestionIndex;
           WidgetsBinding.instance.addPostFrameCallback((_) {
             startTimer();
           });
         }
-        final room = gameProvider.currentRoom;
 
         // Check for null or empty questions
         if (room?.questions == null || room!.questions.isEmpty) {
           return Scaffold(
+            backgroundColor: Colors.black,
             body: Center(
-              child: Text('No questions available in this game room'),
+              child: Text(
+                'No questions available in this game room',
+                style: TextStyle(color: Colors.amber),
+              ),
             ),
           );
         }
@@ -69,28 +111,42 @@ class _GameScreenState extends State<GameScreen> {
         final currentQuestion = room.questions[gameProvider.currentQuestionIndex];
 
         return Scaffold(
+          backgroundColor: Colors.black,
           appBar: AppBar(
-            title: Text('Question ${gameProvider.currentQuestionIndex + 1}'),
+            backgroundColor: Colors.amber,
+            title: Text(
+              'Question ${gameProvider.currentQuestionIndex + 1} of ${gameProvider.questions.length}',
+              style: TextStyle(color: Colors.black),
+            ),
             automaticallyImplyLeading: false,
           ),
           body: Padding(
-            padding: EdgeInsets.all(16.0),
+            padding: EdgeInsets.all(32.0),
             child: Column(
               children: [
                 LinearProgressIndicator(
                   value: _timeLeft / 30,
+                  backgroundColor: Colors.amber.withOpacity(0.3),
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.amber),
                 ),
-                Text('Time left: $_timeLeft seconds'),
-                SizedBox(height: 20),
+                Text(
+                  'Time left: $_timeLeft seconds',
+                  style: TextStyle(color: Colors.amber),
+                ),
+                SizedBox(height: 50),
                 Text(
                   currentQuestion.question,
-                  style: Theme.of(context).textTheme.headlineSmall,
+                  style: TextStyle(
+                    color: Colors.amber,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
                   textAlign: TextAlign.center,
                 ),
-                SizedBox(height: 20),
+                SizedBox(height: 50),
                 ...currentQuestion.answers.map(
                       (answer) => Padding(
-                    padding: EdgeInsets.symmetric(vertical: 8.0),
+                    padding: EdgeInsets.symmetric(vertical: 16.0),
                     child: ElevatedButton(
                       onPressed: _answerSubmitted ? null : () async {
                         setState(() {
@@ -101,19 +157,33 @@ class _GameScreenState extends State<GameScreen> {
                         showDialog(
                           context: context,
                           builder: (context) => AlertDialog(
-                            title: Text(answer == currentQuestion.correctAnswer
-                                ? 'Correct Answer!'
-                                : 'Wrong Answer'),
-                            content: Text(answer == currentQuestion.correctAnswer
-                                ? 'Great job!'
-                                : 'The correct answer was: ${currentQuestion.correctAnswer}'),
+                            backgroundColor: Colors.black,
+                            title: Text(
+                              answer == currentQuestion.correctAnswer
+                                  ? 'Correct Answer!'
+                                  : 'Wrong Answer',
+                              style: TextStyle(color: Colors.amber),
+                            ),
+                            content: Text(
+                              answer == currentQuestion.correctAnswer
+                                  ? 'Great job!'
+                                  : 'The correct answer was: ${currentQuestion.correctAnswer}',
+                              style: TextStyle(color: Colors.amber),
+                            ),
                           ),
                         );
                       },
                       style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.amber,
+                        foregroundColor: Colors.black,
+                        disabledBackgroundColor: Colors.grey[800],
+                        disabledForegroundColor: Colors.grey[500],
                         minimumSize: Size(double.infinity, 50),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                       ),
-                      child: Text(answer),
+                      child: Text(answer,style: TextStyle(fontSize: 16),),
                     ),
                   ),
                 ),
@@ -135,20 +205,33 @@ class _GameScreenState extends State<GameScreen> {
 
     return Container(
       height: 200,
-      child: Card(
-        child: ListView.builder(
-          itemCount: sortedPlayers.length,
-          itemBuilder: (context, index) {
-            final player = sortedPlayers[index];
-            return ListTile(
-              leading: CircleAvatar(
-                child: Text('${index + 1}'),
+      decoration: BoxDecoration(
+        color: Colors.grey[900],
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: ListView.builder(
+        itemCount: sortedPlayers.length,
+        itemBuilder: (context, index) {
+          final player = sortedPlayers[index];
+          return ListTile(
+            tileColor: index.isEven ? Colors.grey[800] : Colors.black,
+            leading: CircleAvatar(
+              backgroundColor: Colors.amber,
+              child: Text(
+                '${index + 1}',
+                style: TextStyle(color: Colors.black),
               ),
-              title: Text(player.name),
-              trailing: Text('${player.score} pts'),
-            );
-          },
-        ),
+            ),
+            title: Text(
+              player.name,
+              style: TextStyle(color: Colors.amber),
+            ),
+            trailing: Text(
+              '${player.score} pts',
+              style: TextStyle(color: Colors.amber),
+            ),
+          );
+        },
       ),
     );
   }
