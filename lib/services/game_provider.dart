@@ -7,6 +7,7 @@ import 'package:trivia_game/services/trivia_service.dart';
 import '../models/game_room.dart';
 import '../models/player.dart';
 import '../models/question.dart';
+import '../screen/loader_screen.dart';
 
 class GameProvider with ChangeNotifier {
   final FirebaseDatabase _database = FirebaseDatabase.instance;
@@ -15,6 +16,7 @@ class GameProvider with ChangeNotifier {
   StreamSubscription<DatabaseEvent>? _roomSubscription;
   List<TriviaQuestion> questions = [];
   int currentQuestionIndex = 0;
+  static final navigatorKey = GlobalKey<NavigatorState>();
 
   Future<void> moveToNextQuestion() async {
     if (currentRoom == null || questions.isEmpty) return;
@@ -22,18 +24,63 @@ class GameProvider with ChangeNotifier {
     currentQuestionIndex++;
 
     if (currentQuestionIndex >= questions.length) {
+      // Set all players to inactive when game finishes
+      final updatedPlayers = currentRoom!.players.map((player) {
+        return Player(
+          id: player.id,
+          name: player.name,
+          score: player.score,
+        );
+      }).toList();
+
       await _database.ref('rooms/${currentRoom!.roomCode}').update({
         'status': GameStatus.finished.toString(),
-        'currentQuestionIndex': currentQuestionIndex - 1
+        'currentQuestionIndex': currentQuestionIndex,
+        'players': updatedPlayers.map((p) => p.toJson()).toList(),
+        'answerOrder':[],
       });
     } else {
-      // Update Firebase with new question index
       await _database.ref('rooms/${currentRoom!.roomCode}').update({
         'currentQuestionIndex': currentQuestionIndex,
+        'answerOrder':[],
       });
     }
 
     notifyListeners();
+  }
+
+  // In GameProvider.dart, add this new method:
+  Future<void> kickPlayer(String playerId) async {
+    if (currentRoom == null || currentPlayer?.id != currentRoom!.hostId) return;
+
+    final updatedPlayers = currentRoom!.players
+        .where((player) => player.id != playerId)
+        .toList();
+
+    await _database.ref('rooms/${currentRoom!.roomCode}/players')
+        .set(updatedPlayers.map((p) => p.toJson()).toList());
+
+    notifyListeners();
+  }
+
+  Future<void> rejoinWaitingRoom(BuildContext context) async {
+    if (currentRoom == null || currentPlayer == null) return;
+
+    final roomRef = _database.ref('rooms/${currentRoom!.roomCode}');
+
+    final updatedPlayers = currentRoom!.players.map((player) {
+      return Player(
+        id: player.id,
+        name: player.name,
+        score: 0,
+      );
+    }).toList();
+
+    await roomRef.update({
+      'status': GameStatus.waiting.toString(),
+      'currentQuestionIndex': 0,
+      'players': updatedPlayers.map((p) => p.toJson()).toList(),
+    });
   }
 
   String generateRoomCode() {
@@ -135,6 +182,35 @@ class GameProvider with ChangeNotifier {
           }
         }
 
+        // Check if current player has been kicked
+        if (currentPlayer != null &&
+            !players.any((p) => p.id == currentPlayer!.id)) {
+          // Player has been kicked - clean up and navigate out
+          currentRoom = null;
+          currentPlayer = null;
+          _roomSubscription?.cancel();
+          notifyListeners();
+
+          // Post frame callback to avoid build errors
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            // Get context using our navigatorKey
+            final context = navigatorKey.currentContext;
+            if (context != null) {
+              // Clear navigation stack and go to home
+              Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+
+              // Show kicked message
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('You have been removed from the room'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          });
+          return;
+        }
+
         // Parse questions if they exist
         List<TriviaQuestion> parsedQuestions = [];
         if (data['questions'] != null) {
@@ -168,25 +244,21 @@ class GameProvider with ChangeNotifier {
     });
   }
 
-  Future<void> backToRoom() async{
-    if (currentRoom == null) return;
-    await _database.ref('rooms/${currentRoom!.roomCode}').update({
-      'status': GameStatus.waiting.toString(),
-      'players':[currentPlayer],
-      'questions': [],
-      'currentQuestionIndex': 0,
-    });
-  }
-
   Future<void> startGame() async {
     if (currentRoom == null) return;
 
+    // Filter out inactive players before starting the game
+    // final activePlayers = currentRoom!.players
+    //     .where((player) => player.status == PlayerStatus.active)
+    //     .toList();
+
     final fetchedQuestions = await TriviaService().fetchQuestions();
-    print(fetchedQuestions);
+
     await _database.ref('rooms/${currentRoom!.roomCode}').update({
       'status': GameStatus.playing.toString(),
       'questions': fetchedQuestions.map((q) => q.toJson()).toList(),
       'currentQuestionIndex': 0,
+      // 'players': activePlayers.map((p) => p.toJson()).toList(),
     });
 
     questions = fetchedQuestions;
@@ -207,8 +279,8 @@ class GameProvider with ChangeNotifier {
     final currentQuestion = questions[currentQuestionIndex];
     final isCorrectAnswer = currentQuestion.correctAnswer == answer;
 
-    final questionRef = _database.ref('rooms/${currentRoom!.roomCode}');
-    final answerOrderRef = questionRef.child('answerOrder');
+    final roomRef = _database.ref('rooms/${currentRoom!.roomCode}');
+    final answerOrderRef = roomRef.child('answerOrder');
 
     final transaction = await answerOrderRef.runTransaction((Object? curr) {
       List<String> answers = curr != null ? List<String>.from(curr as List) : [];

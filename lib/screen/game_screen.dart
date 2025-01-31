@@ -49,6 +49,15 @@ class _GameScreenState extends State<GameScreen> {
     return Consumer<GameProvider>(
       builder: (context, gameProvider, _) {
         final room = gameProvider.currentRoom;
+
+        if(room?.status == GameStatus.waiting){
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            Navigator.pushReplacementNamed(context, '/loader');
+          });
+        }
+
+
+
         if (room?.status == GameStatus.finished) {
           return Scaffold(
             backgroundColor: Colors.black,
@@ -65,24 +74,24 @@ class _GameScreenState extends State<GameScreen> {
                 Expanded(
                   child: buildLeaderboard(room),
                 ),
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: ElevatedButton(
-                    onPressed: () async{
-                      // await gameProvider.backToRoom();
-                      Navigator.pushReplacementNamed(context, '/waiting-room');
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.amber,
-                      foregroundColor: Colors.black,
-                      minimumSize: Size(double.infinity, 50),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                if (room?.hostId == gameProvider.currentPlayer?.id) // Only show for host
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        await gameProvider.rejoinWaitingRoom(context);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.amber,
+                        foregroundColor: Colors.black,
+                        minimumSize: Size(double.infinity, 50),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                       ),
+                      child: Text('Back to Room'),
                     ),
-                    child: Text('Back to Room'),
                   ),
-                ),
               ],
             ),
           );

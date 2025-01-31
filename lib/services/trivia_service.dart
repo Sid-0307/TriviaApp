@@ -10,7 +10,7 @@ class TriviaService {
   Future<List<TriviaQuestion>> fetchQuestions() async {
     try {
       final response = await http.get(
-          Uri.parse('$baseUrl?amount=3&type=multiple')
+          Uri.parse('$baseUrl?amount=10&type=multiple')
       );
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
