@@ -14,7 +14,7 @@ class GameScreen extends StatefulWidget {
 
 class _GameScreenState extends State<GameScreen> {
   Timer? _timer;
-  int _timeLeft = 30;
+  int _timeLeft = 15;
   int _lastQuestionIndex = -1;
   bool _answerSubmitted = false;
 
@@ -24,7 +24,7 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   void startTimer() {
-    _timeLeft = 30;
+    _timeLeft = 15;
     _answerSubmitted = false;
     _timer = Timer.periodic(Duration(seconds: 1), (timer) {
       setState(() {
@@ -134,7 +134,7 @@ class _GameScreenState extends State<GameScreen> {
             child: Column(
               children: [
                 LinearProgressIndicator(
-                  value: _timeLeft / 30,
+                  value: _timeLeft / 15,
                   backgroundColor: Colors.amber.withOpacity(0.3),
                   valueColor: AlwaysStoppedAnimation<Color>(Colors.amber),
                 ),
@@ -142,7 +142,7 @@ class _GameScreenState extends State<GameScreen> {
                   'Time left: $_timeLeft seconds',
                   style: TextStyle(color: Colors.amber),
                 ),
-                SizedBox(height: 50),
+                SizedBox(height: 40),
                 Text(
                   currentQuestion.question,
                   style: TextStyle(
@@ -152,7 +152,7 @@ class _GameScreenState extends State<GameScreen> {
                   ),
                   textAlign: TextAlign.center,
                 ),
-                SizedBox(height: 50),
+                SizedBox(height: 30),
                 ...currentQuestion.answers.map(
                       (answer) => Padding(
                     padding: EdgeInsets.symmetric(vertical: 16.0),
@@ -196,6 +196,7 @@ class _GameScreenState extends State<GameScreen> {
                     ),
                   ),
                 ),
+                SizedBox(height: 20),
                 Spacer(),
                 buildLeaderboard(room),
               ],
