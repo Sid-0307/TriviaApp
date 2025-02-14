@@ -244,7 +244,7 @@ class GameProvider with ChangeNotifier {
     });
   }
 
-  Future<void> startGame() async {
+  Future<void> startGame({required int count, required TriviaCategory category, required TriviaDifficulty difficulty}) async {
     if (currentRoom == null) return;
 
     // Filter out inactive players before starting the game
@@ -252,7 +252,9 @@ class GameProvider with ChangeNotifier {
     //     .where((player) => player.status == PlayerStatus.active)
     //     .toList();
 
-    final fetchedQuestions = await TriviaService().fetchQuestions();
+    final fetchedQuestions = await TriviaService().fetchQuestions(amount: count,
+      category: category,
+      difficulty: difficulty,);
 
     await _database.ref('rooms/${currentRoom!.roomCode}').update({
       'status': GameStatus.playing.toString(),

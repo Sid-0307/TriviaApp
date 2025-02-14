@@ -4,13 +4,45 @@ import 'package:http/http.dart' as http;
 
 import '../models/question.dart';
 
+enum TriviaCategory {
+  sports(21, 'Sports'),
+  movies(11, 'Movies'),
+  gk(9,'General Knowledge'),
+  history(23, 'History'),
+  music(12,"Music"),
+  vehicle(28,"Vehicles"),
+  animal(27,"Animals"),
+  games(15,"Games");
+
+  final int id;
+  final String name;
+  const TriviaCategory(this.id, this.name);
+}
+
+enum TriviaDifficulty {
+  easy('easy', 'Easy'),
+  medium('medium', 'Medium'),
+  hard('hard', 'Hard');
+
+  final String value;
+  final String display;
+  const TriviaDifficulty(this.value, this.display);
+}
+
 class TriviaService {
   static const String baseUrl = 'https://opentdb.com/api.php';
 
-  Future<List<TriviaQuestion>> fetchQuestions() async {
+  Future<List<TriviaQuestion>> fetchQuestions({
+    required int amount,
+    required TriviaCategory category,
+    required TriviaDifficulty difficulty,
+  }) async {
     try {
       final response = await http.get(
-          Uri.parse('$baseUrl?amount=10&type=multiple')
+          // Uri.parse('$baseUrl?amount=10&type=multiple')
+        Uri.parse(
+          '$baseUrl?amount=$amount&category=${category.id}&difficulty=${difficulty.value}&type=multiple',
+        ),
       );
       if (response.statusCode == 200) {
         final data = json.decode(response.body);

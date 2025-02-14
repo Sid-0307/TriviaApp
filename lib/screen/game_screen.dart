@@ -56,9 +56,9 @@ class _GameScreenState extends State<GameScreen> {
           });
         }
 
-
-
+        // Game Over and other conditions remain the same...
         if (room?.status == GameStatus.finished) {
+          // ... existing game over code ...
           return Scaffold(
             backgroundColor: Colors.black,
             appBar: AppBar(
@@ -69,30 +69,32 @@ class _GameScreenState extends State<GameScreen> {
               ),
               automaticallyImplyLeading: false,
             ),
-            body: Column(
-              children: [
-                Expanded(
-                  child: buildLeaderboard(room),
-                ),
-                if (room?.hostId == gameProvider.currentPlayer?.id) // Only show for host
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: ElevatedButton(
-                      onPressed: () async {
-                        await gameProvider.rejoinWaitingRoom(context);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.amber,
-                        foregroundColor: Colors.black,
-                        minimumSize: Size(double.infinity, 50),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                      child: Text('Back to Room'),
-                    ),
+            body: SafeArea(
+              child: Column(
+                children: [
+                  Expanded(
+                    child: buildLeaderboard(room),
                   ),
-              ],
+                  if (room?.hostId == gameProvider.currentPlayer?.id)
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          await gameProvider.rejoinWaitingRoom(context);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.amber,
+                          foregroundColor: Colors.black,
+                          minimumSize: Size(double.infinity, 50),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        child: Text('Back to Room'),
+                      ),
+                    ),
+                ],
+              ),
             ),
           );
         }
@@ -104,7 +106,6 @@ class _GameScreenState extends State<GameScreen> {
           });
         }
 
-        // Check for null or empty questions
         if (room?.questions == null || room!.questions.isEmpty) {
           return Scaffold(
             backgroundColor: Colors.black,
@@ -129,76 +130,120 @@ class _GameScreenState extends State<GameScreen> {
             ),
             automaticallyImplyLeading: false,
           ),
-          body: Padding(
-            padding: EdgeInsets.all(32.0),
+          body: SafeArea(
             child: Column(
               children: [
-                LinearProgressIndicator(
-                  value: _timeLeft / 15,
-                  backgroundColor: Colors.amber.withOpacity(0.3),
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.amber),
-                ),
-                Text(
-                  'Time left: $_timeLeft seconds',
-                  style: TextStyle(color: Colors.amber),
-                ),
-                SizedBox(height: 40),
-                Text(
-                  currentQuestion.question,
-                  style: TextStyle(
-                    color: Colors.amber,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
+                // Timer Section (Fixed at top)
+                Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: Column(
+                    children: [
+                      LinearProgressIndicator(
+                        value: _timeLeft / 15,
+                        backgroundColor: Colors.amber.withOpacity(0.3),
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.amber),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'Time left: $_timeLeft seconds',
+                        style: TextStyle(color: Colors.amber),
+                      ),
+                    ],
                   ),
-                  textAlign: TextAlign.center,
                 ),
-                SizedBox(height: 30),
-                ...currentQuestion.answers.map(
-                      (answer) => Padding(
-                    padding: EdgeInsets.symmetric(vertical: 16.0),
-                    child: ElevatedButton(
-                      onPressed: _answerSubmitted ? null : () async {
-                        setState(() {
-                          _answerSubmitted = true;
-                        });
-                        await gameProvider.submitAnswer(answer);
-                        // Show dialog for answer correctness
-                        showDialog(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            backgroundColor: Colors.black,
-                            title: Text(
-                              answer == currentQuestion.correctAnswer
-                                  ? 'Correct Answer!'
-                                  : 'Wrong Answer',
-                              style: TextStyle(color: Colors.amber),
+
+                // Question and Options Section (Expanded with even spacing)
+                Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16.0),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        return Column(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            // Question Text
+                            Container(
+                              constraints: BoxConstraints(
+                                maxHeight: constraints.maxHeight * 0.3,
+                              ),
+                              child: SingleChildScrollView(
+                                child: Text(
+                                  currentQuestion.question,
+                                  style: TextStyle(
+                                    color: Colors.amber,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
                             ),
-                            content: Text(
-                              answer == currentQuestion.correctAnswer
-                                  ? 'Great job!'
-                                  : 'The correct answer was: ${currentQuestion.correctAnswer}',
-                              style: TextStyle(color: Colors.amber),
+
+                            // Answer Options
+                            Container(
+                              constraints: BoxConstraints(
+                                maxHeight: constraints.maxHeight * 0.6,
+                              ),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                children: currentQuestion.answers.map(
+                                      (answer) => ElevatedButton(
+                                    onPressed: _answerSubmitted ? null : () async {
+                                      setState(() {
+                                        _answerSubmitted = true;
+                                      });
+                                      await gameProvider.submitAnswer(answer);
+                                      showDialog(
+                                        context: context,
+                                        builder: (context) => AlertDialog(
+                                          backgroundColor: Colors.black,
+                                          title: Text(
+                                            answer == currentQuestion.correctAnswer
+                                                ? 'Correct Answer!'
+                                                : 'Wrong Answer',
+                                            style: TextStyle(color: Colors.amber),
+                                          ),
+                                          content: Text(
+                                            answer == currentQuestion.correctAnswer
+                                                ? 'Great job!'
+                                                : 'The correct answer was: ${currentQuestion.correctAnswer}',
+                                            style: TextStyle(color: Colors.amber),
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.amber,
+                                      foregroundColor: Colors.black,
+                                      disabledBackgroundColor: Colors.grey[800],
+                                      disabledForegroundColor: Colors.grey[500],
+                                      minimumSize: Size(double.infinity, 50),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                    ),
+                                    child: Text(
+                                      answer,
+                                      style: TextStyle(fontSize: 16),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
+                                ).toList(),
+                              ),
                             ),
-                          ),
+                          ],
                         );
                       },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.amber,
-                        foregroundColor: Colors.black,
-                        disabledBackgroundColor: Colors.grey[800],
-                        disabledForegroundColor: Colors.grey[500],
-                        minimumSize: Size(double.infinity, 50),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                      child: Text(answer,style: TextStyle(fontSize: 16),),
                     ),
                   ),
                 ),
-                SizedBox(height: 20),
-                Spacer(),
-                buildLeaderboard(room),
+
+                // Leaderboard Section (Fixed at bottom)
+                Container(
+                  height: 200,
+                  padding: EdgeInsets.all(16.0),
+                  child: buildLeaderboard(room),
+                ),
               ],
             ),
           ),
@@ -207,6 +252,7 @@ class _GameScreenState extends State<GameScreen> {
     );
   }
 
+  // buildLeaderboard method remains the same...
   Widget buildLeaderboard(GameRoom? room) {
     if (room == null) return SizedBox();
 
@@ -214,34 +260,43 @@ class _GameScreenState extends State<GameScreen> {
       ..sort((a, b) => b.score.compareTo(a.score));
 
     return Container(
-      height: 200,
       decoration: BoxDecoration(
-        color: Colors.grey[900],
         borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.amber, width: 1),
       ),
-      child: ListView.builder(
-        itemCount: sortedPlayers.length,
-        itemBuilder: (context, index) {
-          final player = sortedPlayers[index];
-          return ListTile(
-            tileColor: index.isEven ? Colors.grey[800] : Colors.black,
-            leading: CircleAvatar(
-              backgroundColor: Colors.amber,
-              child: Text(
-                '${index + 1}',
-                style: TextStyle(color: Colors.black),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(10),
+        child: ListView.builder(
+          padding: EdgeInsets.zero,
+          physics: ClampingScrollPhysics(),
+          shrinkWrap: true,
+          itemCount: sortedPlayers.length,
+          itemBuilder: (context, index) {
+            final player = sortedPlayers[index];
+            return Container(
+              color: index.isEven ? Colors.grey[900] : Colors.black,
+              child: ListTile(
+                dense: true,
+                leading: CircleAvatar(
+                  backgroundColor: Colors.amber,
+                  radius: 15,
+                  child: Text(
+                    '${index + 1}',
+                    style: TextStyle(color: Colors.black, fontSize: 12),
+                  ),
+                ),
+                title: Text(
+                  player.name,
+                  style: TextStyle(color: Colors.amber, fontSize: 14),
+                ),
+                trailing: Text(
+                  '${player.score} pts',
+                  style: TextStyle(color: Colors.amber, fontSize: 14),
+                ),
               ),
-            ),
-            title: Text(
-              player.name,
-              style: TextStyle(color: Colors.amber),
-            ),
-            trailing: Text(
-              '${player.score} pts',
-              style: TextStyle(color: Colors.amber),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }
